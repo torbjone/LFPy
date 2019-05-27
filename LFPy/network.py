@@ -370,10 +370,10 @@ class NetworkPopulation(object):
             cell.set_pos(**self.soma_pos[i])
 
         # assign a random rotation around the z-axis of each cell
-        self.rotations = np.random.uniform(0, np.pi*2, len(self.gids))
-        assert('z' not in self.rotation_args.keys())
+        # self.rotations = np.random.uniform(0, np.pi*2, len(self.gids))
+        # assert('z' not in self.rotation_args.keys())
         for i, cell in enumerate(self.cells):
-            cell.set_rotation(z=self.rotations[i], **self.rotation_args)
+            cell.set_rotation(**self.rotation_args)
 
         # assign gid to each cell
         for gid, cell in zip(self.gids, self.cells):
@@ -382,38 +382,38 @@ class NetworkPopulation(object):
 
         # gather gids, soma positions and cell rotations to RANK 0, and write
         # as structured array.
-        if RANK == 0:
-            populationData = flattenlist(COMM.gather(zip(self.gids, self.soma_pos, self.rotations)))
-
-            # create structured array for storing data
-            dtype = [('gid', 'i8'), ('x', float), ('y', float), ('z', float),
-                     ('x_rot', float), ('y_rot', float), ('z_rot', float)]
-            popDataArray = np.empty((len(populationData, )), dtype=dtype)
-            for i, (gid, pos, z_rot) in enumerate(populationData):
-                popDataArray[i]['gid'] = gid
-                popDataArray[i]['x'] = pos['x']
-                popDataArray[i]['y'] = pos['y']
-                popDataArray[i]['z'] = pos['z']
-                popDataArray[i]['x_rot'] = np.pi/2
-                popDataArray[i]['y_rot'] = 0.
-                popDataArray[i]['z_rot'] = z_rot
-
-            # Dump to hdf5 file, append to file if it exists
-            f = h5py.File(os.path.join(self.OUTPUTPATH,
-                                       'cell_positions_and_rotations.h5'))
-            # delete old entry if it exist
-            if self.name in f.keys():
-                del f[self.name]
-                try:
-                    assert self.name not in f.keys()
-                except AssertionError:
-                    raise AssertionError
-            f[self.name] = popDataArray
-            f.close()
-        else:
-            COMM.gather(zip(self.gids, self.soma_pos, self.rotations))
-
-        # sync
+        # if RANK == 0:
+        #     populationData = flattenlist(COMM.gather(zip(self.gids, self.soma_pos, self.rotations)))
+        #
+        #     # create structured array for storing data
+        #     dtype = [('gid', 'i8'), ('x', float), ('y', float), ('z', float),
+        #              ('x_rot', float), ('y_rot', float), ('z_rot', float)]
+        #     popDataArray = np.empty((len(populationData, )), dtype=dtype)
+        #     for i, (gid, pos, z_rot) in enumerate(populationData):
+        #         popDataArray[i]['gid'] = gid
+        #         popDataArray[i]['x'] = pos['x']
+        #         popDataArray[i]['y'] = pos['y']
+        #         popDataArray[i]['z'] = pos['z']
+        #         popDataArray[i]['x_rot'] = np.pi/2
+        #         popDataArray[i]['y_rot'] = 0.
+        #         popDataArray[i]['z_rot'] = z_rot
+        #
+        #     # Dump to hdf5 file, append to file if it exists
+        #     f = h5py.File(os.path.join(self.OUTPUTPATH,
+        #                                'cell_positions_and_rotations.h5'))
+        #     # delete old entry if it exist
+        #     if self.name in f.keys():
+        #         del f[self.name]
+        #         try:
+        #             assert self.name not in f.keys()
+        #         except AssertionError:
+        #             raise AssertionError
+        #     f[self.name] = popDataArray
+        #     f.close()
+        # else:
+        #     COMM.gather(zip(self.gids, self.soma_pos, self.rotations))
+        #
+        # # sync
         COMM.Barrier()
 
 
