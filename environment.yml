@@ -9,5 +9,5 @@ dependencies:
   - Cython
   - h5py
   - python=3
-  - neuron==mpi_
+  - neuron=*=mpi_*
   - lfpy
