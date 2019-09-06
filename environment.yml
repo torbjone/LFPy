@@ -1,17 +1,13 @@
 name: lfpy
 channels:
   - conda-forge
+  - defaults
 dependencies:
-  - python=3
   - numpy
   - scipy
   - matplotlib
   - Cython
   - h5py
-  - gxx_linux-64
-  - neuron=*=mpi_*
-  - nest-simulator=*=mpi_openmpi*
-  - pytest
-  - pip
-  - pip:
-    - LFPy==2.0.0
+  - python=3
+  - neuron==mpi_
+  - lfpy
