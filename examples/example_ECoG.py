@@ -324,6 +324,7 @@ electrodeParameters = {
     'n': 20,
     'r': 10,
     'N': N,
+    'method': "pointsource",
 }
 
 elec_with_MoIParameters = {
@@ -353,17 +354,15 @@ for i in range(N.shape[0]):
 # put parameters in dictionary
 
 ecogParameters = {
-    'sigma_S': sigma_S,
-    'sigma_T': 0.3,              # Extracellular potential
-    'sigma_G': 0.3,
+    'sigma_S': sigma_S,  # Conductitivy above cortex
+    'sigma_T': sigma_T,  # Conductivity of cortex
+    'sigma_G': sigma_T,  # Conductivity below cortex. Assume same as cortex
     'h': h,
     'z_shift': -h,
-    # x,y,z-coordinates of electrode contacts
     'x': np.zeros(num_ECoG_elecs),
     'y': np.zeros(num_ECoG_elecs),
-    # Assume that top of cortex is 50 um above cell top
     'z': np.array([top_of_cortex] * num_ECoG_elecs),
-    'n': 200,
+    'n': 2000,
     'r': 500,  # ECoG radii are often 500-1000 um
     'N': N,
     'method': "pointsource",

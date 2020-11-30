@@ -358,6 +358,9 @@ class testRecExtElectrode(unittest.TestCase):
         MEA._test_cell_extent()
 
     def test_slice_shift_invariance_pointsource(self):
+        """
+        Shifting a slice in the z-direction should not affect results
+        """
         h = 200
         z_shift_1 = 0
         z_shift_2 = -352
@@ -434,6 +437,167 @@ class testRecExtElectrode(unittest.TestCase):
 
             np.testing.assert_allclose(M_1 @ stick.imem,
                                        M_2 @ stick.imem, rtol=1E-7)
+
+    def test_homogeneous_moi_pointsource(self):
+        """
+        Homogeneous MoI should be equivalent to in vivo
+        """
+        h = 250
+
+        elec_x = np.zeros(11) + 20
+        elec_y = np.zeros(11)
+        elec_z = np.linspace(-h, 0, 11)
+
+        elec_params = {
+            'sigma': 0.3,
+            'x': elec_x,
+            'y': elec_y,
+            'z': elec_z,
+            'method': "pointsource",
+            'r': 0.001,
+            'n': 50,
+            'N': [0, 0, 1],
+        }
+
+        elec_params_MoI = {
+            'sigma_T': 0.3,
+            'sigma_S': 0.3,
+            'sigma_G': 0.3,
+            'h': h,
+            'z_shift': -h,
+            'x': elec_x,
+            'y': elec_y,
+            'z': elec_z,
+            'method': "pointsource",
+            'r': 0.001,
+            'n': 50,
+            'N': [0, 0, 1],
+        }
+
+        stimParams = {
+            'pptype': 'SinSyn',
+            'delay': -100.,
+            'dur': 1000.,
+            'pkamp': 1.,
+            'freq': 100.,
+            'phase': -np.pi / 2,
+            'bias': 0.,
+            'record_current': True
+        }
+        stickParams = {
+            'morphology': os.path.join(
+                LFPy.__path__[0],
+                'test',
+                'ball_and_sticks.hoc'),
+            'passive_parameters': {
+                'g_pas': 1. / 30000,
+                'e_pas': -65},
+            'passive': True,
+            'tstart': -10,
+            'tstop': 20,
+            'dt': 2**-4,
+            'nsegs_method': 'lambda_f',
+            'lambda_f': 100,
+        }
+        stick = LFPy.Cell(**stickParams)
+
+        LFPy.StimIntElectrode(stick, 0,
+                              **stimParams)
+
+        stick.simulate(rec_imem=True)
+
+        stick.set_pos(z=-np.max(stick.z) - 5)
+
+
+        MEA = LFPy.RecMEAElectrode(stick, **elec_params_MoI)
+        M_1 = MEA.get_transformation_matrix()
+
+        elec = LFPy.RecExtElectrode(stick, **elec_params)
+        M_2 = elec.get_transformation_matrix()
+
+        np.testing.assert_allclose(M_1 @ stick.imem,
+                                   M_2 @ stick.imem, rtol=1E-3)
+
+
+    def test_moi_elecsize(self):
+        """
+        Test that phi with and without electrode is the same for tiny electrodes
+        """
+        h = 250
+
+        elec_x = np.zeros(11) + 10
+        elec_y = np.zeros(11)
+        elec_z = np.linspace(0, h, 11)
+
+        elec_params_MoI_e = {
+            'sigma_T': 1.5,
+            'sigma_S': 0.3,
+            'sigma_G': 0.0,
+            'h': h,
+            'z_shift': -h,
+            'x': elec_x,
+            'y': elec_y,
+            'z': elec_z,
+            'method': "pointsource",
+            'r': 0.0001,
+            'n': 50,
+            'N': [0, 0, 1],
+        }
+
+        elec_params_MoI = {
+            'sigma_T': 1.5,
+            'sigma_S': 0.3,
+            'sigma_G': 0.0,
+            'h': h,
+            'z_shift': -h,
+            'x': elec_x,
+            'y': elec_y,
+            'z': elec_z,
+            'method': "pointsource",
+        }
+
+        stimParams = {
+            'pptype': 'SinSyn',
+            'delay': -100.,
+            'dur': 1000.,
+            'pkamp': 1.,
+            'freq': 100.,
+            'phase': -np.pi / 2,
+            'bias': 0.,
+            'record_current': True
+        }
+        stickParams = {
+            'morphology': os.path.join(
+                LFPy.__path__[0],
+                'test',
+                'ball_and_sticks.hoc'),
+            'passive_parameters': {
+                'g_pas': 1. / 30000,
+                'e_pas': -65},
+            'passive': True,
+            'tstart': -10,
+            'tstop': 20,
+            'dt': 2**-4,
+            'nsegs_method': 'lambda_f',
+            'lambda_f': 100,
+        }
+        stick = LFPy.Cell(**stickParams)
+
+        LFPy.StimIntElectrode(stick, 0, **stimParams)
+
+        stick.simulate(rec_imem=True)
+
+        stick.set_pos(z=-np.max(stick.z) - 5)
+
+        MEA1 = LFPy.RecMEAElectrode(stick, **elec_params_MoI)
+        M_1 = MEA1.get_transformation_matrix()
+
+        MEA2 = LFPy.RecMEAElectrode(stick, **elec_params_MoI_e)
+        M_2 = MEA2.get_transformation_matrix()
+
+        np.testing.assert_allclose(M_1 @ stick.imem,
+                                   M_2 @ stick.imem, rtol=1E-5)
+
 
     def test_isotropic_version_of_anisotropic_methods(self):
         stickParams = {
